@@ -25,24 +25,30 @@
 
 package me.lucko.luckperms.placeholders;
 
+import at.helpch.placeholderapi.expansion.PlaceholderExpansion;
 import com.hypixel.hytale.common.plugin.PluginIdentifier;
 import com.hypixel.hytale.server.core.HytaleServer;
-import at.helpch.placeholderapi.PlaceholderAPIPlugin;
-import at.helpch.placeholderapi.expansion.PlaceholderExpansion;
 import com.hypixel.hytale.server.core.universe.PlayerRef;
+import me.lucko.luckperms.common.placeholders.PlaceholderContext;
+import me.lucko.luckperms.common.placeholders.PlaceholderResolver;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
+import net.luckperms.api.model.user.User;
+import net.luckperms.api.platform.PlayerAdapter;
+import net.luckperms.api.query.QueryOptions;
 
 /**
  * PlaceholderAPI Expansion for LuckPerms, implemented using the LuckPerms API.
  */
-public class LuckPermsExpansion extends PlaceholderExpansion implements PlaceholderPlatform {
+public class LuckPermsExpansion extends PlaceholderExpansion {
     private static final String IDENTIFIER = "luckperms";
     private static final String PLUGIN_NAME = "LuckPerms:LuckPerms";
     private static final String AUTHOR = "Luck";
     private static final String VERSION = "5.5-R1";
 
-    private LPPlaceholderProvider provider;
+    private LuckPerms luckPerms;
+    private PlayerAdapter<PlayerRef> playerAdapter;
+    private PlaceholderResolver resolver;
 
     @Override
     public boolean canRegister() {
@@ -55,25 +61,23 @@ public class LuckPermsExpansion extends PlaceholderExpansion implements Placehol
             return false;
         }
 
-//        LuckPerms luckPerms = Bukkit.getServicesManager().getRegistration(LuckPerms.class).getProvider();
-        final LuckPerms luckPerms = LuckPermsProvider.get();
-
-        this.provider = new LPPlaceholderProvider(this, luckPerms);
+        this.luckPerms = LuckPermsProvider.get();
+        this.playerAdapter = this.luckPerms.getPlayerAdapter(PlayerRef.class);
+        this.resolver = new PlaceholderResolver();
         return super.register();
     }
 
     @Override
     public String onPlaceholderRequest(PlayerRef player, String identifier) {
-        if (player == null || this.provider == null) {
+        if (player == null || this.luckPerms == null || this.resolver == null) {
             return "";
         }
 
-        return this.provider.onPlaceholderRequest(player, player.getUuid(), identifier);
-    }
+        User user = this.playerAdapter.getUser(player);
+        QueryOptions queryOptions = this.playerAdapter.getQueryOptions(player);
+        PlaceholderContext context = new PlaceholderContext(this.luckPerms, user, queryOptions);
 
-    @Override
-    public String formatBoolean(boolean b) {
-        return b ? PlaceholderAPIPlugin.instance().configManager().config().booleanValue().trueValue() : PlaceholderAPIPlugin.instance().configManager().config().booleanValue().falseValue();
+        return this.resolver.resolve(context, identifier);
     }
 
     @Override
@@ -82,7 +86,7 @@ public class LuckPermsExpansion extends PlaceholderExpansion implements Placehol
     }
 
     @Override
-    public String getPlugin() {
+    public String getRequiredPlugin() {
         return PLUGIN_NAME;
     }
 

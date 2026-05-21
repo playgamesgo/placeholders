@@ -25,22 +25,28 @@
 
 package me.lucko.luckperms.placeholders;
 
-import me.clip.placeholderapi.PlaceholderAPIPlugin;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
+import me.lucko.luckperms.common.placeholders.PlaceholderContext;
+import me.lucko.luckperms.common.placeholders.PlaceholderResolver;
 import net.luckperms.api.LuckPerms;
+import net.luckperms.api.model.user.User;
+import net.luckperms.api.platform.PlayerAdapter;
+import net.luckperms.api.query.QueryOptions;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 /**
  * PlaceholderAPI Expansion for LuckPerms, implemented using the LuckPerms API.
  */
-public class LuckPermsExpansion extends PlaceholderExpansion implements PlaceholderPlatform {
+public class LuckPermsExpansion extends PlaceholderExpansion {
     private static final String IDENTIFIER = "luckperms";
     private static final String PLUGIN_NAME = "LuckPerms";
     private static final String AUTHOR = "Luck";
     private static final String VERSION = "5.5-R1";
 
-    private LPPlaceholderProvider provider;
+    private LuckPerms luckPerms;
+    private PlayerAdapter<Player> playerAdapter;
+    private PlaceholderResolver resolver;
 
     @Override
     public boolean canRegister() {
@@ -53,23 +59,23 @@ public class LuckPermsExpansion extends PlaceholderExpansion implements Placehol
             return false;
         }
 
-        LuckPerms luckPerms = Bukkit.getServicesManager().getRegistration(LuckPerms.class).getProvider();
-        this.provider = new LPPlaceholderProvider(this, luckPerms);
+        this.luckPerms = Bukkit.getServicesManager().getRegistration(LuckPerms.class).getProvider();
+        this.playerAdapter = this.luckPerms.getPlayerAdapter(Player.class);
+        this.resolver = new PlaceholderResolver();
         return super.register();
     }
 
     @Override
     public String onPlaceholderRequest(Player player, String identifier) {
-        if (player == null || this.provider == null) {
+        if (player == null || this.luckPerms == null || this.resolver == null) {
             return "";
         }
 
-        return this.provider.onPlaceholderRequest(player, player.getUniqueId(), identifier);
-    }
+        User user = this.playerAdapter.getUser(player);
+        QueryOptions queryOptions = this.playerAdapter.getQueryOptions(player);
+        PlaceholderContext context = new PlaceholderContext(this.luckPerms, user, queryOptions);
 
-    @Override
-    public String formatBoolean(boolean b) {
-        return b ? PlaceholderAPIPlugin.booleanTrue() : PlaceholderAPIPlugin.booleanFalse();
+        return this.resolver.resolve(context, identifier);
     }
 
     @Override

@@ -28,7 +28,13 @@ package me.lucko.luckperms.placeholders;
 import be.maximvdw.placeholderapi.PlaceholderAPI;
 import be.maximvdw.placeholderapi.PlaceholderReplaceEvent;
 import be.maximvdw.placeholderapi.PlaceholderReplacer;
+import me.lucko.luckperms.common.placeholders.PlaceholderContext;
+import me.lucko.luckperms.common.placeholders.PlaceholderResolver;
 import net.luckperms.api.LuckPerms;
+import net.luckperms.api.model.user.User;
+import net.luckperms.api.platform.PlayerAdapter;
+import net.luckperms.api.query.QueryOptions;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -37,8 +43,10 @@ import java.util.Locale;
 /**
  * MVdWPlaceholderAPI Hook for LuckPerms, implemented using the LuckPerms API.
  */
-public class LuckPermsMVdWHook extends JavaPlugin implements PlaceholderReplacer, PlaceholderPlatform {
-    private LPPlaceholderProvider provider;
+public class LuckPermsMVdWHook extends JavaPlugin implements PlaceholderReplacer {
+    private LuckPerms luckPerms;
+    private PlayerAdapter<Player> playerAdapter;
+    private PlaceholderResolver resolver;
 
     @Override
     public void onEnable() {
@@ -46,8 +54,9 @@ public class LuckPermsMVdWHook extends JavaPlugin implements PlaceholderReplacer
             throw new RuntimeException("LuckPerms API not provided.");
         }
 
-        LuckPerms luckPerms = getServer().getServicesManager().load(LuckPerms.class);
-        this.provider = new LPPlaceholderProvider(this, luckPerms);
+        this.luckPerms = Bukkit.getServicesManager().getRegistration(LuckPerms.class).getProvider();
+        this.playerAdapter = this.luckPerms.getPlayerAdapter(Player.class);
+        this.resolver = new PlaceholderResolver();
         PlaceholderAPI.registerPlaceholder(this, "luckperms_*", this);
     }
 
@@ -61,11 +70,15 @@ public class LuckPermsMVdWHook extends JavaPlugin implements PlaceholderReplacer
         String identifier = placeholder.substring("luckperms_".length()).toLowerCase(Locale.ROOT);
         Player player = event.getPlayer();
 
-        if (player == null || this.provider == null) {
+        if (player == null || this.luckPerms == null || this.resolver == null) {
             return "";
         }
 
-        return this.provider.onPlaceholderRequest(player, player.getUniqueId(), identifier);
+        User user = this.playerAdapter.getUser(player);
+        QueryOptions queryOptions = this.playerAdapter.getQueryOptions(player);
+        PlaceholderContext context = new PlaceholderContext(this.luckPerms, user, queryOptions);
+
+        return this.resolver.resolve(context, identifier);
     }
 
 }

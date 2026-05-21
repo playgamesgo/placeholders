@@ -18,12 +18,14 @@ subprojects {
     repositories {
         mavenLocal()
         mavenCentral()
-        maven { url('https://repo.maven.apache.org/maven2/') }
         maven { url('https://repo.lucko.me/') }
     }
 
     dependencies {
         compileOnly 'net.luckperms:api:5.5'
+        implementation('me.lucko.luckperms:common-placeholders:5.5.46-SNAPSHOT') {
+            exclude group: 'net.luckperms', module: 'api'
+        }
     }
 
     artifacts {

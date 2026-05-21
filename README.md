@@ -11,8 +11,5 @@ You need to place `Expansion-LuckPerms.jar` in the PlaceholderAPI expansions fol
 ### MVdWPlaceholderAPI (Bukkit)
 You need to place `LuckPermsMVdWHook.jar` in your plugins folder.
 
-### PlaceholderAPI (Fabric)
-You need to place `LuckPerms-Fabric-Placeholders.jar` in your mods folder.
-
 ### PlaceholderAPI (Hytale)
 You need to place `Expansion-LuckPerms-Hytale.jar` in the PlaceholderAPI expansions folder, located at `/mods/PlaceholderAPI-PlaceholderAPI/expansions/`.
