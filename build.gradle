@@ -15,6 +15,11 @@ subprojects {
         options.release = 11
     }
 
+    configurations {
+        shade
+        implementation.extendsFrom shade
+    }
+
     repositories {
         mavenLocal()
         mavenCentral()
@@ -23,9 +28,13 @@ subprojects {
 
     dependencies {
         compileOnly 'net.luckperms:api:5.5'
-        implementation('me.lucko.luckperms:common-placeholders:5.5.46-SNAPSHOT') {
+        shade('me.lucko.luckperms:common-placeholders:5.5.46-SNAPSHOT') {
             exclude group: 'net.luckperms', module: 'api'
         }
+    }
+
+    shadowJar {
+        configurations = [project.configurations.shade]
     }
 
     artifacts {

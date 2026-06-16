@@ -1,0 +1,60 @@
+import net.fabricmc.loom.task.RemapJarTask
+
+plugins {
+    id 'fabric-loom' version '1.13-SNAPSHOT'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.release = 21
+}
+
+repositories {
+    maven {
+        url 'https://maven.nucleoid.xyz/'
+        content {
+            includeGroup('eu.pb4')
+        }
+    }
+}
+
+configurations {
+    shade
+    implementation.extendsFrom shade
+}
+
+dependencies {
+    // https://modmuss50.me/fabric.html
+    minecraft 'com.mojang:minecraft:1.21.11'
+    mappings loom.officialMojangMappings()
+    modImplementation 'net.fabricmc:fabric-loader:0.18.2'
+
+    Set<String> apiModules = [
+            "fabric-api-base",
+            "fabric-lifecycle-events-v1"
+    ]
+
+    // Add each module as a dependency
+    apiModules.forEach {
+        modImplementation(fabricApi.module(it, '0.139.4+1.21.11'))
+    }
+
+    modImplementation('eu.pb4:placeholder-api:2.8.1+1.21.10')
+}
+
+processResources {
+    inputs.property "version", project.version
+    filteringCharset "UTF-8"
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+
+task remappedShadowJar(type: RemapJarTask) {
+    dependsOn tasks.shadowJar
+    input = tasks.shadowJar.archiveFile
+    addNestedDependencies = true
+    archiveFileName = "LuckPerms-Fabric-Placeholders.jar"
+}
+
+tasks.assemble.dependsOn tasks.remappedShadowJar

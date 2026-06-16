@@ -1,5 +1,15 @@
+pluginManagement {
+    repositories {
+        maven {
+            url 'https://maven.fabricmc.net/'
+        }
+        gradlePluginPortal()
+    }
+}
+
 rootProject.name = 'luckperms-placeholders'
 
-include(':bukkit-placeholderapi')
-include(':hytale-placeholderapi')
 include(':bukkit-mvdw')
+include(':bukkit-placeholderapi')
+include(':fabric-placeholderapi')
+include(':hytale-placeholderapi')
