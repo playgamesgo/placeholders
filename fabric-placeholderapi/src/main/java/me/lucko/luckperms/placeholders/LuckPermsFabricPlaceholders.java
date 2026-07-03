@@ -25,10 +25,7 @@
 
 package me.lucko.luckperms.placeholders;
 
-import eu.pb4.placeholders.api.ParserContext;
-import eu.pb4.placeholders.api.PlaceholderHandler;
-import eu.pb4.placeholders.api.PlaceholderResult;
-import eu.pb4.placeholders.api.Placeholders;
+import eu.pb4.placeholders.api.*;
 import eu.pb4.placeholders.api.parsers.NodeParser;
 import me.lucko.luckperms.common.placeholders.Placeholder;
 import me.lucko.luckperms.common.placeholders.PlaceholderContext;
@@ -41,7 +38,7 @@ import net.luckperms.api.model.user.User;
 import net.luckperms.api.query.QueryOptions;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 
 public class LuckPermsFabricPlaceholders implements ModInitializer {
 
@@ -53,7 +50,7 @@ public class LuckPermsFabricPlaceholders implements ModInitializer {
     public void registerPlaceholders() {
         LuckPerms luckPerms = LuckPermsProvider.get();
         for (Placeholder placeholder : PlaceholderRegistry.getAll()) {
-            Placeholders.register(
+            Placeholders.registerServer(
                     Identifier.fromNamespaceAndPath("luckperms", placeholder.id()),
                     new Handler(luckPerms, placeholder)
             );
@@ -62,10 +59,10 @@ public class LuckPermsFabricPlaceholders implements ModInitializer {
 
     private static final NodeParser NODE_PARSER = NodeParser.builder().legacyAll().simplifiedTextFormat().quickText().build();
 
-    private record Handler(LuckPerms api, Placeholder placeholder) implements PlaceholderHandler {
+    private record Handler(LuckPerms api, Placeholder placeholder) implements eu.pb4.placeholders.api.Placeholder.Handler<ServerPlaceholderContext, String> {
         @Override
-        public PlaceholderResult onPlaceholderRequest(eu.pb4.placeholders.api.PlaceholderContext context, String argument) {
-            ServerPlayer player = context.player();
+        public PlaceholderResult onPlaceholderRequest(ServerPlaceholderContext context, String argument) {
+            Player player = context.player();
             User user = this.api.getUserManager().getUser(player.getUUID());
             if (user == null) {
                 return PlaceholderResult.invalid("Unable to find corresponding user for UUID: " + player.getUUID());
@@ -90,7 +87,7 @@ public class LuckPermsFabricPlaceholders implements ModInitializer {
             if (input == null) {
                 return null;
             }
-            return NODE_PARSER.parseText(input, ParserContext.of());
+            return NODE_PARSER.parseComponent(input, ParserContext.of());
         }
 
         private static PlaceholderResult toResult(Component component) {
